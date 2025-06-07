@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bounce Pop! Game</title>
+<style>
+  body {
+    margin: 0; background: #121212; color: #eee; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  }
+  #menu, #settings, #game {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  #settings, #game { display: none; }
+  button {
+    background: #222; border: none; color: #eee; padding: 1em 2em; margin: 0.5em;
+    border-radius: 8px; font-size: 1.2em; cursor: pointer; transition: background 0.3s;
+  }
+  button:hover {
+    background: #444;
+  }
+  canvas {
+    background: #181818; border-radius: 12px; box-shadow: 0 0 20px #0ff;
+  }
+  #score {
+    margin-top: 1em; font-size: 1.5em; letter-spacing: 2px;
+  }
+  label {
+    margin: 0.5em;
+  }
+  input[type=color], input[type=range] {
+    margin-left: 0.5em;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+<div id="menu">
+  <h1>Bounce Pop!</h1>
+  <button id="playBtn">Play</button>
+  <button id="settingsBtn">Settings</button>
+</div>
+
+<div id="settings">
+  <h2>Settings</h2>
+  <label for="colorPicker">Ball Color:</label>
+  <input type="color" id="colorPicker" value="#00ffff" />
+  <br />
+  <label for="speedRange">Bounce Speed:</label>
+  <input type="range" id="speedRange" min="1" max="10" value="5" />
+  <br />
+  <button id="backBtn">Back</button>
+</div>
+
+<div id="game">
+  <canvas id="gameCanvas" width="300" height="400"></canvas>
+  <div id="score">Score: 0</div>
+  <button id="stopBtn">Stop</button>
+</div>
+
+<script>
+  const menu = document.getElementById('menu');
+  const settings = document.getElementById('settings');
+  const game = document.getElementById('game');
+  const playBtn = document.getElementById('playBtn');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const backBtn = document.getElementById('backBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const colorPicker = document.getElementById('colorPicker');
+  const speedRange = document.getElementById('speedRange');
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreDisplay = document.getElementById('score');
+
+  let ballColor = colorPicker.value;
+  let bounceSpeed = parseInt(speedRange.value);
+  let animationFrameId;
+  let score = 0;
+
+  let ball = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    radius: 20,
+    dy: bounceSpeed,
+    dx: bounceSpeed / 2,
+  };
+
+  function playBounceSound() {
+    const ctx = new AudioContext();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 300;
+    o.connect(g);
+    g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.1, ctx.currentTime);
+    o.start();
+    o.stop(ctx.currentTime + 0.1);
+  }
+
+  function drawBall() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.shadowColor = ballColor;
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = ballColor;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function update() {
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+
+    if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+      ball.dy = -ball.dy;
+      playBounceSound();
+      score++;
+      scoreDisplay.textContent = 'Score: ' + score;
+    }
+
+    if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+      ball.dx = -ball.dx;
+      playBounceSound();
+      score++;
+      scoreDisplay.textContent = 'Score: ' + score;
+    }
+  }
+
+  function loop() {
+    drawBall();
+    update();
+    animationFrameId = requestAnimationFrame(loop);
+  }
+
+  playBtn.addEventListener('click', () => {
+    menu.style.display = 'none';
+    settings.style.display = 'none';
+    game.style.display = 'flex';
+    score = 0;
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+    ball.dx = bounceSpeed / 2;
+    ball.dy = bounceSpeed;
+    scoreDisplay.textContent = 'Score: 0';
+    loop();
+  });
+
+  settingsBtn.addEventListener('click', () => {
+    menu.style.display = 'none';
+    settings.style.display = 'flex';
+    game.style.display = 'none';
+  });
+
+  backBtn.addEventListener('click', () => {
+    menu.style.display = 'flex';
+    settings.style.display = 'none';
+    game.style.display = 'none';
+  });
+
+  stopBtn.addEventListener('click', () => {
+    cancelAnimationFrame(animationFrameId);
+    menu.style.display = 'flex';
+    settings.style.display = 'none';
+    game.style.display = 'none';
+  });
+
+  colorPicker.addEventListener('input', (e) => {
+    ballColor = e.target.value;
+  });
+
+  speedRange.addEventListener('input', (e) => {
+    bounceSpeed = parseInt(e.target.value);
+  });
+</script>
+</body>
+</html>
